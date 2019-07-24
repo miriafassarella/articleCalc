@@ -9,17 +9,13 @@ constructor(){
     this.initial(); //colocamos aqui pq o construtor é iniciado automaticamente.
     this.buttonsEvents();
     
-    
 }
 
 initial(){//quando a calculadora inicia.
-    
+
+    this.setLastNumberToDisplay();//iniciando a calculadora com zero.
  
 }
-
-
-
-
 
 addEventListenerAll(element, events, fn){
 
@@ -29,15 +25,17 @@ addEventListenerAll(element, events, fn){
     })
 }
 setError(){
-this.displayCalc = 'Error';
+
+    this.displayCalc = 'Error';
 }
 clearEntry(){
     this._operation.pop();
-    console.log(this._operation);
+    this.setLastNumberToDisplay();//limpando a ultima entrada no display.
+    
 }
 clearAll(){
     this._operation = [];
-    console.log(this._operation);
+    this.setLastNumberToDisplay();//limpando o display.
 }
 getLastOperation(){
     return this._operation[this._operation.length - 1];
@@ -45,31 +43,96 @@ getLastOperation(){
 isOperator(value){
 return ['+', '-', '*', '%', '/'].indexOf(value) > -1; //validando o operador
 
-
 }
 setLastOperation(value){
-    this._operation[this._operation.length - 1] = value;
+    this._operation[this._operation.length - 1] = value; //trocando o operador.
+}
+pushOperation(value){
+    this._operation.push(value);
+
+    if(this._operation.length > 3){
+
+            this.calc();
+    }
+}
+calc(){
+
+    let last = '';
+
+        if(this._operation.length > 3){
+
+    last = this._operation.pop();//guardando o quarto numero em uma variável
+
+}
+
+let result = eval(this._operation.join(""));
+
+    if( last == '%'){ //tratando o botão porcento.
+
+        result /= 100;
+
+        this._operation = [result];
+
+    }else{
+
+        this._operation = [result]; //colocando os valores no novo array.
+        if(last) this._operation.push(last);
+    }
+   
+   this.setLastNumberToDisplay();
+}
+
+setLastNumberToDisplay(){//mostrando os valores no display.
+    let lastNumber;
+
+    for(let i = this._operation.length-1; i >=0; i--){
+
+        if(!this.isOperator(this._operation[i])){
+            lastNumber = this._operation[i];
+            break;
+        }
+    }
+
+    if(!lastNumber) lastNumber = 0;
+    this.displayCalc = lastNumber; // anexando o valor no display.
 }
 
 addOperation(value){
 
-    if(isNaN(this.getLastOperation())){
+    if(isNaN(this.getLastOperation())){//ultimo valor do array, se for uma string.
 
-        if(this.isOperator(value)){
-            this.setLastOperation(value);
-        }else if(isNaN(value)){
+        if(this.isOperator(value)){//novo valor, se for um operador.
+            
+            this.setLastOperation(value);//mudando de ideia quanto ao operador.
 
         }else{ 
-            this._operation.push(value);
+            this.pushOperation(value);
+            this.setLastNumberToDisplay();
         }
 
+    }else{//se for um numero
+
+        if(this.isOperator(value)){
+            this.pushOperation(value);
+        }else{ 
+        let newValue = this.getLastOperation().toString() + value.toString(); //concatenando os números.
+        this.setLastOperation(parseFloat(newValue));
+
+        this.setLastNumberToDisplay();
+        
+    }
+}
+}
+addDot(){//tratando a ponto e adicionando ele no display.
+    let lastOperation = this.getLastOperation();
+    
+    if(this.isOperator(lastOperation) || !lastOperation){
+        this.pushOperation('0.')
     }else{
-        let newValue = this.getLastOperation().toString() + value.toString();
-        this.setLastOperation(newValue);
+        this.setLastOperation(lastOperation.toString() + '.');
     }
 
-    
-    console.log(this._operation);
+    this.setLastNumberToDisplay();
 }
  
 execBtn(value){
@@ -89,9 +152,12 @@ execBtn(value){
             this.addOperation(value);
                 break;
         case '=':
-            
+            this.calc();
                 break;
         case '.':
+            this.addDot();
+                break;
+        case '--':
             
                 break;
 
@@ -113,8 +179,6 @@ execBtn(value){
 
     }
 }
-
-
 buttonsEvents(){
 
     let buttons = document.querySelectorAll("#row-buttons > div");//Amarrando a cada elemento.
@@ -133,15 +197,17 @@ buttonsEvents(){
         })
 
     });
-    
-
-        
 }
 
 get displayCalc(){
     return this._displayCalcEl.innerHTML;
 }
 set displayCalc(value){
+    if(value.toString().length > 10){
+        this.setError();
+        return false;
+    }
+
     this._displayCalcEl.innerHTML = value;
 }
 }
